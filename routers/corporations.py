@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -6,7 +6,8 @@ import crud
 import schemas
 import models
 from database import get_db
-from auth import security, get_current_user
+from auth import security
+from auth_dependencies import get_corporation_access_checker
 
 router = APIRouter(
     prefix="/corporations",
@@ -45,7 +46,7 @@ def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get
 def read_corporation(
     corporation_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_corporation_access_checker)
 ):
     """
     指定IDの法人詳細を取得します（所属ユーザー含む）。
@@ -54,13 +55,7 @@ def read_corporation(
     Bearer tokenでユーザー認証を行い、トークンに含まれるユーザーIDから
     所属法人を特定し、リクエストされた法人IDと一致する場合のみアクセス許可されます。
     """
-    # 権限チェック：ユーザーの所属法人IDとリクエストされた法人IDが一致するかチェック
-    if current_user.corporation_id != corporation_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: You can only access your own corporation's data"
-        )
-
+    # 権限チェックは依存性注入で実行済み
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if db_corporation is None:
         raise HTTPException(status_code=404, detail="Corporation not found")
@@ -90,10 +85,17 @@ def delete_corporation(corporation_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{corporation_id}/users", response_model=List[schemas.User], summary="法人所属ユーザー一覧", dependencies=[Depends(security)])
-def read_corporation_users(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_corporation_users(
+    corporation_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_corporation_access_checker)
+):
     """
     指定法人に所属するユーザー一覧を取得します。
     """
+    # 権限チェックは依存性注入で実行済み
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if db_corporation is None:
         raise HTTPException(status_code=404, detail="Corporation not found")
@@ -102,10 +104,17 @@ def read_corporation_users(corporation_id: int, skip: int = 0, limit: int = 100,
 
 
 @router.get("/{corporation_id}/schools", response_model=List[schemas.School], summary="法人関連学校一覧", dependencies=[Depends(security)])
-def read_corporation_schools(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_corporation_schools(
+    corporation_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_corporation_access_checker)
+):
     """
     指定法人に関連する学校一覧を取得します。
     """
+    # 権限チェックは依存性注入で実行済み
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if db_corporation is None:
         raise HTTPException(status_code=404, detail="Corporation not found")
@@ -114,10 +123,17 @@ def read_corporation_schools(corporation_id: int, skip: int = 0, limit: int = 10
 
 
 @router.get("/{corporation_id}/inquiries", response_model=List[schemas.Inquiry], summary="法人関連問い合わせ一覧", dependencies=[Depends(security)])
-def read_corporation_inquiries(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_corporation_inquiries(
+    corporation_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_corporation_access_checker)
+):
     """
     指定法人に関連する問い合わせ一覧を取得します。
     """
+    # 権限チェックは依存性注入で実行済み
     corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if not corporation:
         raise HTTPException(status_code=404, detail="Corporation not found")
