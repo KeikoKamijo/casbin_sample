@@ -1,19 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
 import crud
 import schemas
+import models
 from database import get_db
+from auth import security, get_current_user
 
 router = APIRouter(
-    prefix="/api/v1/corporations",
+    prefix="/corporations",
     tags=["corporations"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.post("/", response_model=schemas.Corporation, summary="法人作成")
+@router.post("/", response_model=schemas.Corporation, summary="法人作成", dependencies=[Depends(security)])
 def create_corporation(corporation: schemas.CorporationCreate, db: Session = Depends(get_db)):
     """
     新規法人を作成します。
@@ -30,7 +32,7 @@ def create_corporation(corporation: schemas.CorporationCreate, db: Session = Dep
     return crud.create_corporation(db=db, corporation=corporation)
 
 
-@router.get("/", response_model=List[schemas.Corporation], summary="法人一覧取得")
+@router.get("/", response_model=List[schemas.Corporation], summary="法人一覧取得", dependencies=[Depends(security)])
 def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     法人一覧を取得します。
@@ -39,18 +41,33 @@ def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get
     return corporations
 
 
-@router.get("/{corporation_id}", response_model=schemas.CorporationWithUsers, summary="法人詳細取得")
-def read_corporation(corporation_id: int, db: Session = Depends(get_db)):
+@router.get("/{corporation_id}", response_model=schemas.Corporation, summary="法人詳細取得", dependencies=[Depends(security)])
+def read_corporation(
+    corporation_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     """
     指定IDの法人詳細を取得します（所属ユーザー含む）。
+
+    認証が必要で、ユーザーは自分の所属法人の詳細のみ取得できます。
+    Bearer tokenでユーザー認証を行い、トークンに含まれるユーザーIDから
+    所属法人を特定し、リクエストされた法人IDと一致する場合のみアクセス許可されます。
     """
+    # 権限チェック：ユーザーの所属法人IDとリクエストされた法人IDが一致するかチェック
+    if current_user.corporation_id != corporation_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You can only access your own corporation's data"
+        )
+
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if db_corporation is None:
         raise HTTPException(status_code=404, detail="Corporation not found")
     return db_corporation
 
 
-@router.put("/{corporation_id}", response_model=schemas.Corporation, summary="法人更新")
+@router.put("/{corporation_id}", response_model=schemas.Corporation, summary="法人更新", dependencies=[Depends(security)])
 def update_corporation(corporation_id: int, corporation: schemas.CorporationUpdate, db: Session = Depends(get_db)):
     """
     指定IDの法人情報を更新します。
@@ -61,7 +78,7 @@ def update_corporation(corporation_id: int, corporation: schemas.CorporationUpda
     return db_corporation
 
 
-@router.delete("/{corporation_id}", summary="法人削除")
+@router.delete("/{corporation_id}", summary="法人削除", dependencies=[Depends(security)])
 def delete_corporation(corporation_id: int, db: Session = Depends(get_db)):
     """
     指定IDの法人を削除します。
@@ -72,7 +89,7 @@ def delete_corporation(corporation_id: int, db: Session = Depends(get_db)):
     return {"message": "Corporation deleted successfully"}
 
 
-@router.get("/{corporation_id}/users", response_model=List[schemas.User], summary="法人所属ユーザー一覧")
+@router.get("/{corporation_id}/users", response_model=List[schemas.User], summary="法人所属ユーザー一覧", dependencies=[Depends(security)])
 def read_corporation_users(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     指定法人に所属するユーザー一覧を取得します。
@@ -84,7 +101,7 @@ def read_corporation_users(corporation_id: int, skip: int = 0, limit: int = 100,
     return users
 
 
-@router.get("/{corporation_id}/schools", response_model=List[schemas.School], summary="法人関連学校一覧")
+@router.get("/{corporation_id}/schools", response_model=List[schemas.School], summary="法人関連学校一覧", dependencies=[Depends(security)])
 def read_corporation_schools(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     指定法人に関連する学校一覧を取得します。
@@ -96,7 +113,7 @@ def read_corporation_schools(corporation_id: int, skip: int = 0, limit: int = 10
     return schools
 
 
-@router.get("/{corporation_id}/inquiries", response_model=List[schemas.Inquiry], summary="法人関連問い合わせ一覧")
+@router.get("/{corporation_id}/inquiries", response_model=List[schemas.Inquiry], summary="法人関連問い合わせ一覧", dependencies=[Depends(security)])
 def read_corporation_inquiries(corporation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     指定法人に関連する問い合わせ一覧を取得します。
@@ -108,7 +125,7 @@ def read_corporation_inquiries(corporation_id: int, skip: int = 0, limit: int = 
     return inquiries
 
 
-@router.post("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連付け")
+@router.post("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連付け", dependencies=[Depends(security)])
 def add_school_to_corporation(corporation_id: int, school_id: int, db: Session = Depends(get_db)):
     """
     法人と学校を関連付けます。
@@ -119,7 +136,7 @@ def add_school_to_corporation(corporation_id: int, school_id: int, db: Session =
     return {"message": "School added to Corporation successfully"}
 
 
-@router.delete("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連解除")
+@router.delete("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連解除", dependencies=[Depends(security)])
 def remove_school_from_corporation(corporation_id: int, school_id: int, db: Session = Depends(get_db)):
     """
     法人と学校の関連を解除します。

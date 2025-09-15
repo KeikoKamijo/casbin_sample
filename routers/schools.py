@@ -5,15 +5,16 @@ from typing import List
 import crud
 import schemas
 from database import get_db
+from auth import security
 
 router = APIRouter(
-    prefix="/api/v1/schools",
+    prefix="/schools",
     tags=["schools"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.post("/", response_model=schemas.School, summary="学校作成")
+@router.post("/", response_model=schemas.School, summary="学校作成", dependencies=[Depends(security)])
 def create_school(school: schemas.SchoolCreate, db: Session = Depends(get_db)):
     """
     新規学校を作成します。
@@ -30,7 +31,7 @@ def create_school(school: schemas.SchoolCreate, db: Session = Depends(get_db)):
     return crud.create_school(db=db, school=school)
 
 
-@router.get("/", response_model=List[schemas.School], summary="学校一覧取得")
+@router.get("/", response_model=List[schemas.School], summary="学校一覧取得", dependencies=[Depends(security)])
 def read_schools(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     学校一覧を取得します。
@@ -39,7 +40,7 @@ def read_schools(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
     return schools
 
 
-@router.get("/{school_id}", response_model=schemas.SchoolWithCorporations, summary="学校詳細取得")
+@router.get("/{school_id}", response_model=schemas.School, summary="学校詳細取得", dependencies=[Depends(security)])
 def read_school(school_id: int, db: Session = Depends(get_db)):
     """
     指定IDの学校詳細を取得します（関連法人含む）。
@@ -50,7 +51,7 @@ def read_school(school_id: int, db: Session = Depends(get_db)):
     return db_school
 
 
-@router.put("/{school_id}", response_model=schemas.School, summary="学校更新")
+@router.put("/{school_id}", response_model=schemas.School, summary="学校更新", dependencies=[Depends(security)])
 def update_school(school_id: int, school: schemas.SchoolUpdate, db: Session = Depends(get_db)):
     """
     指定IDの学校情報を更新します。
@@ -61,7 +62,7 @@ def update_school(school_id: int, school: schemas.SchoolUpdate, db: Session = De
     return db_school
 
 
-@router.delete("/{school_id}", summary="学校削除")
+@router.delete("/{school_id}", summary="学校削除", dependencies=[Depends(security)])
 def delete_school(school_id: int, db: Session = Depends(get_db)):
     """
     指定IDの学校を削除します。
@@ -74,7 +75,7 @@ def delete_school(school_id: int, db: Session = Depends(get_db)):
 
 
 
-@router.get("/{school_id}/inquiries", response_model=List[schemas.Inquiry], summary="学校関連問い合わせ一覧")
+@router.get("/{school_id}/inquiries", response_model=List[schemas.Inquiry], summary="学校関連問い合わせ一覧", dependencies=[Depends(security)])
 def read_school_inquiries(school_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     指定学校に関連する問い合わせ一覧を取得します。

@@ -47,19 +47,3 @@ class Inquiry(InquiryBase):
         from_attributes = True
 
 
-class InquiryWithDetails(Inquiry):
-    user: Optional['User'] = None
-    assigned_to: Optional['User'] = None
-    school: Optional['School'] = None
-    corporation: Optional['Corporation'] = None
-
-    class Config:
-        from_attributes = True
-
-
-# Forward references will be resolved when other schemas are imported
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .users import User
-    from .schools import School
-    from .corporations import Corporation

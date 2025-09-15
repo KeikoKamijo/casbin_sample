@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import models
 from database import engine
-from routers import users, corporations, schools, inquiries
+from routers import users, corporations, schools, inquiries, auth
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -27,6 +27,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(corporations.router)
 app.include_router(schools.router)
@@ -55,9 +56,10 @@ async def health_check():
         "database": "connected",
         "api_version": "1.0.0",
         "endpoints": {
-            "users": "/api/v1/users",
-            "corporations": "/api/v1/corporations",
-            "schools": "/api/v1/schools",
-            "inquiries": "/api/v1/inquiries"
+            "auth": "/auth",
+            "users": "/users",
+            "corporations": "/corporations",
+            "schools": "/schools",
+            "inquiries": "/inquiries"
         }
     }

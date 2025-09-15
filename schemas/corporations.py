@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
 
 class CorporationBase(BaseModel):
@@ -29,23 +29,3 @@ class Corporation(CorporationBase):
     class Config:
         from_attributes = True
 
-
-class CorporationWithUsers(Corporation):
-    users: List['User'] = []
-
-    class Config:
-        from_attributes = True
-
-
-class CorporationWithSchools(Corporation):
-    schools: List['School'] = []
-
-    class Config:
-        from_attributes = True
-
-
-# Forward references will be resolved when other schemas are imported
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .users import User
-    from .schools import School

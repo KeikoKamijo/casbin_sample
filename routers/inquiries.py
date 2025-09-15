@@ -5,15 +5,16 @@ from typing import List, Optional
 import crud
 import schemas
 from database import get_db
+from auth import security
 
 router = APIRouter(
-    prefix="/api/v1/inquiries",
+    prefix="/inquiries",
     tags=["inquiries"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.post("/", response_model=schemas.Inquiry, summary="問い合わせ作成")
+@router.post("/", response_model=schemas.Inquiry, summary="問い合わせ作成", dependencies=[Depends(security)])
 def create_inquiry(inquiry: schemas.InquiryCreate, db: Session = Depends(get_db)):
     """
     新規問い合わせを作成します。
@@ -45,7 +46,7 @@ def create_inquiry(inquiry: schemas.InquiryCreate, db: Session = Depends(get_db)
     return crud.create_inquiry(db=db, inquiry=inquiry)
 
 
-@router.get("/", response_model=List[schemas.Inquiry], summary="問い合わせ一覧取得")
+@router.get("/", response_model=List[schemas.Inquiry], summary="問い合わせ一覧取得", dependencies=[Depends(security)])
 def read_inquiries(
     skip: int = 0,
     limit: int = 100,
@@ -62,7 +63,7 @@ def read_inquiries(
     return inquiries
 
 
-@router.get("/{inquiry_id}", response_model=schemas.InquiryWithDetails, summary="問い合わせ詳細取得")
+@router.get("/{inquiry_id}", response_model=schemas.Inquiry, summary="問い合わせ詳細取得", dependencies=[Depends(security)])
 def read_inquiry(inquiry_id: int, db: Session = Depends(get_db)):
     """
     指定IDの問い合わせ詳細を取得します（関連情報含む）。
@@ -73,7 +74,7 @@ def read_inquiry(inquiry_id: int, db: Session = Depends(get_db)):
     return db_inquiry
 
 
-@router.put("/{inquiry_id}", response_model=schemas.Inquiry, summary="問い合わせ更新")
+@router.put("/{inquiry_id}", response_model=schemas.Inquiry, summary="問い合わせ更新", dependencies=[Depends(security)])
 def update_inquiry(inquiry_id: int, inquiry: schemas.InquiryUpdate, db: Session = Depends(get_db)):
     """
     指定IDの問い合わせ情報を更新します。
@@ -84,7 +85,7 @@ def update_inquiry(inquiry_id: int, inquiry: schemas.InquiryUpdate, db: Session 
     return db_inquiry
 
 
-@router.put("/{inquiry_id}/assign", response_model=schemas.Inquiry, summary="担当者割り当て")
+@router.put("/{inquiry_id}/assign", response_model=schemas.Inquiry, summary="担当者割り当て", dependencies=[Depends(security)])
 def assign_inquiry(inquiry_id: int, assignment: schemas.InquiryAssign, db: Session = Depends(get_db)):
     """
     問い合わせに担当者を割り当てます。
@@ -101,7 +102,7 @@ def assign_inquiry(inquiry_id: int, assignment: schemas.InquiryAssign, db: Sessi
     return db_inquiry
 
 
-@router.put("/{inquiry_id}/status", response_model=schemas.Inquiry, summary="ステータス更新")
+@router.put("/{inquiry_id}/status", response_model=schemas.Inquiry, summary="ステータス更新", dependencies=[Depends(security)])
 def update_inquiry_status(inquiry_id: int, status_update: schemas.InquiryStatusUpdate, db: Session = Depends(get_db)):
     """
     問い合わせのステータスを更新します。
@@ -114,7 +115,7 @@ def update_inquiry_status(inquiry_id: int, status_update: schemas.InquiryStatusU
     return db_inquiry
 
 
-@router.delete("/{inquiry_id}", summary="問い合わせ削除")
+@router.delete("/{inquiry_id}", summary="問い合わせ削除", dependencies=[Depends(security)])
 def delete_inquiry(inquiry_id: int, db: Session = Depends(get_db)):
     """
     指定IDの問い合わせを削除します。

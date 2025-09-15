@@ -1,17 +1,19 @@
 from .users import User, UserBase, UserCreate, UserUpdate
-from .corporations import Corporation, CorporationBase, CorporationCreate, CorporationUpdate, CorporationWithUsers, CorporationWithSchools
-from .schools import School, SchoolBase, SchoolCreate, SchoolUpdate, SchoolWithCorporations
-from .inquiries import Inquiry, InquiryBase, InquiryCreate, InquiryUpdate, InquiryAssign, InquiryStatusUpdate, InquiryWithDetails
+from .corporations import Corporation, CorporationBase, CorporationCreate, CorporationUpdate
+from .schools import School, SchoolBase, SchoolCreate, SchoolUpdate
+from .inquiries import Inquiry, InquiryBase, InquiryCreate, InquiryUpdate, InquiryAssign, InquiryStatusUpdate
+from .auth import Token, TokenData
 
 __all__ = [
     # Users
     "User", "UserBase", "UserCreate", "UserUpdate",
     # Corporations
     "Corporation", "CorporationBase", "CorporationCreate", "CorporationUpdate",
-    "CorporationWithUsers", "CorporationWithSchools",
     # Schools
-    "School", "SchoolBase", "SchoolCreate", "SchoolUpdate", "SchoolWithCorporations",
+    "School", "SchoolBase", "SchoolCreate", "SchoolUpdate",
     # Inquiries
     "Inquiry", "InquiryBase", "InquiryCreate", "InquiryUpdate", "InquiryAssign",
-    "InquiryStatusUpdate", "InquiryWithDetails"
+    "InquiryStatusUpdate",
+    # Auth
+    "Token", "TokenData"
 ]

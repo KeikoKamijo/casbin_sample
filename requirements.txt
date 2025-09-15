@@ -4,3 +4,7 @@ sqlalchemy
 pydantic[email]
 passlib[bcrypt]
 python-multipart
+casbin
+casbin-sqlalchemy-adapter
+python-jose[cryptography]
+python-multipart

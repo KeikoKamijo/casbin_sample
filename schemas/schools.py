@@ -34,15 +34,3 @@ class School(SchoolBase):
     class Config:
         from_attributes = True
 
-
-class SchoolWithCorporations(School):
-    corporations: List['Corporation'] = []
-
-    class Config:
-        from_attributes = True
-
-
-# Forward reference will be resolved when Corporation is imported
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .corporations import Corporation

@@ -1,6 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .corporations import Corporation
 
 
 class UserBase(BaseModel):
@@ -28,13 +31,6 @@ class User(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    corporation: Optional['Corporation'] = None
 
     class Config:
         from_attributes = True
-
-
-# Forward reference will be resolved when Corporation is imported
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .corporations import Corporation
