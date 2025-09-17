@@ -2,6 +2,7 @@ from .users import User, UserBase, UserCreate, UserUpdate
 from .corporations import Corporation, CorporationBase, CorporationCreate, CorporationUpdate
 from .schools import School, SchoolBase, SchoolCreate, SchoolUpdate
 from .inquiries import Inquiry, InquiryBase, InquiryCreate, InquiryUpdate, InquiryAssign, InquiryStatusUpdate
+from .roles import Role, RoleBase, RoleCreate, RoleUpdate
 from .auth import LoginRequest, Token, TokenData
 
 __all__ = [
@@ -14,6 +15,8 @@ __all__ = [
     # Inquiries
     "Inquiry", "InquiryBase", "InquiryCreate", "InquiryUpdate", "InquiryAssign",
     "InquiryStatusUpdate",
+    # Roles
+    "Role", "RoleBase", "RoleCreate", "RoleUpdate",
     # Auth
     "LoginRequest", "Token", "TokenData"
 ]

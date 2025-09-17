@@ -1,9 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .corporations import Corporation
+from typing import Optional
 
 
 class UserBase(BaseModel):
@@ -11,6 +8,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     corporation_id: Optional[int] = None
+    role_id: Optional[int] = None
 
 
 class UserCreate(UserBase):
@@ -24,6 +22,17 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     is_active: Optional[bool] = None
     corporation_id: Optional[int] = None
+    role_id: Optional[int] = None
+
+
+# Forward reference for Role
+class RoleForUser(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class User(UserBase):
@@ -31,6 +40,7 @@ class User(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    role: Optional[RoleForUser] = None
 
     class Config:
         from_attributes = True

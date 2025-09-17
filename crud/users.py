@@ -10,6 +10,10 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 

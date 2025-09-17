@@ -14,7 +14,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     corporation_id = Column(Integer, ForeignKey("corporations.id"), nullable=True)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     corporation = relationship("Corporation", back_populates="users")
+    role = relationship("Role", back_populates="users")

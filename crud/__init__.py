@@ -1,5 +1,6 @@
 from .users import (
     get_password_hash,
+    verify_password,
     get_user,
     get_user_by_username,
     get_user_by_email,
@@ -48,7 +49,7 @@ from .inquiries import (
 
 __all__ = [
     # Users
-    "get_password_hash", "get_user", "get_user_by_username", "get_user_by_email",
+    "get_password_hash", "verify_password", "get_user", "get_user_by_username", "get_user_by_email",
     "get_users", "create_user", "update_user", "delete_user", "get_users_by_corporation",
     # Corporations
     "get_corporation", "get_corporation_by_name", "get_corporation_by_code",

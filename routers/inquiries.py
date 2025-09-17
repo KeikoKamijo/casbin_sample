@@ -4,8 +4,10 @@ from typing import List, Optional
 
 import crud
 import schemas
+import models
 from database import get_db
 from auth import security
+from casbin_dependencies import casbin_access_controller
 
 router = APIRouter(
     prefix="/inquiries",
@@ -46,28 +48,44 @@ router = APIRouter(
 #     return crud.create_inquiry(db=db, inquiry=inquiry)
 
 
-@router.get("/", response_model=List[schemas.Inquiry], summary="問い合わせ一覧取得", dependencies=[Depends(security)])
+@router.get("/", response_model=List[schemas.Inquiry], summary="問い合わせ一覧取得（管理者のみ）", dependencies=[Depends(security)])
 def read_inquiries(
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
     priority: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(casbin_access_controller)
 ):
     """
-    問い合わせ一覧を取得します。
+    問い合わせ一覧を取得します。（管理者のみアクセス可能）
     - **status**: ステータスでフィルタ（pending/in_progress/resolved/closed）
     - **priority**: 優先度でフィルタ（low/normal/high/urgent）
+
+    **権限**: admin ロールが必要（Casbinで自動判定）
+    **アクセス不可**: accounting ロール
+    **自動判定**: URL /inquiries + GET → inquiries:read 権限チェック
     """
+    # 権限チェックは casbin_access_controller で自動実行済み
+    # GET /inquiries → inquiries:read 権限が自動でチェックされる
     inquiries = crud.get_inquiries(db, skip=skip, limit=limit, status=status, priority=priority)
     return inquiries
 
 
-@router.get("/{inquiry_id}", response_model=schemas.Inquiry, summary="問い合わせ詳細取得", dependencies=[Depends(security)])
-def read_inquiry(inquiry_id: int, db: Session = Depends(get_db)):
+@router.get("/{inquiry_id}", response_model=schemas.Inquiry, summary="問い合わせ詳細取得（管理者のみ）", dependencies=[Depends(security)])
+def read_inquiry(
+    inquiry_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(casbin_access_controller)
+):
     """
     指定IDの問い合わせ詳細を取得します（関連情報含む）。
+
+    **権限**: admin ロールが必要（Casbinで自動判定）
+    **アクセス不可**: accounting ロール
+    **自動判定**: URL /inquiries/{id} + GET → inquiries:read 権限チェック
     """
+    # 権限チェックは casbin_access_controller で自動実行済み
     db_inquiry = crud.get_inquiry(db, inquiry_id=inquiry_id)
     if db_inquiry is None:
         raise HTTPException(status_code=404, detail="Inquiry not found")

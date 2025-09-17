@@ -8,6 +8,7 @@ from .users import User
 from .corporations import Corporation
 from .schools import School
 from .inquiries import Inquiry
+from .roles import Role
 
 __all__ = [
     "Base",
@@ -15,5 +16,6 @@ __all__ = [
     "User",
     "Corporation",
     "School",
-    "Inquiry"
+    "Inquiry",
+    "Role"
 ]
