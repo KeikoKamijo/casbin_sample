@@ -8,7 +8,7 @@ class InquiryBase(BaseModel):
     content: str
     status: Optional[str] = "pending"
     priority: Optional[str] = "normal"
-    school_id: Optional[int] = None
+    shop_id: Optional[int] = None
     corporation_id: Optional[int] = None
 
 
@@ -21,7 +21,7 @@ class InquiryUpdate(BaseModel):
     content: Optional[str] = None
     status: Optional[str] = None
     priority: Optional[str] = None
-    school_id: Optional[int] = None
+    shop_id: Optional[int] = None
     corporation_id: Optional[int] = None
     assigned_to_id: Optional[int] = None
 

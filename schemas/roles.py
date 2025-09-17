@@ -26,3 +26,35 @@ class Role(RoleBase):
 
     class Config:
         from_attributes = True
+
+
+# ロール権限関連のスキーマ
+class RolePermissionBase(BaseModel):
+    resource: str  # users, corporations, shops, inquiries
+    action: str    # read, create, update, delete
+
+
+class RolePermissionCreate(RolePermissionBase):
+    pass
+
+
+class RolePermissionUpdate(BaseModel):
+    resource: Optional[str] = None
+    action: Optional[str] = None
+
+
+class RolePermission(RolePermissionBase):
+    id: int
+    role_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ロール with 権限情報
+class RoleWithPermissions(Role):
+    permissions: list[RolePermission] = []
+
+    class Config:
+        from_attributes = True

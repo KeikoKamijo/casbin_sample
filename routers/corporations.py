@@ -7,7 +7,7 @@ import schemas
 import models
 from database import get_db
 from auth import security
-from auth_dependencies import get_corporation_access_checker
+from authorization_manager import authorization_manager
 
 router = APIRouter(
     prefix="/corporations",
@@ -46,7 +46,7 @@ def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get
 def read_corporation(
     corporation_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_corporation_access_checker)
+    current_user: models.User = Depends(authorization_manager)
 ):
     """
     指定IDの法人詳細を取得します（所属ユーザー含む）。
@@ -90,7 +90,7 @@ def read_corporation_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_corporation_access_checker)
+    current_user: models.User = Depends(authorization_manager)
 ):
     """
     指定法人に所属するユーザー一覧を取得します。
@@ -103,23 +103,23 @@ def read_corporation_users(
     return users
 
 
-@router.get("/{corporation_id}/schools", response_model=List[schemas.School], summary="法人関連学校一覧", dependencies=[Depends(security)])
-def read_corporation_schools(
+@router.get("/{corporation_id}/shops", response_model=List[schemas.Shop], summary="法人関連店舗一覧", dependencies=[Depends(security)])
+def read_corporation_shops(
     corporation_id: int,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_corporation_access_checker)
+    current_user: models.User = Depends(authorization_manager)
 ):
     """
-    指定法人に関連する学校一覧を取得します。
+    指定法人に関連する店舗一覧を取得します。
     """
     # 権限チェックは依存性注入で実行済み
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)
     if db_corporation is None:
         raise HTTPException(status_code=404, detail="Corporation not found")
-    schools = crud.get_schools_by_corporation(db, corporation_id=corporation_id, skip=skip, limit=limit)
-    return schools
+    shops = crud.get_shops_by_corporation(db, corporation_id=corporation_id, skip=skip, limit=limit)
+    return shops
 
 
 # @router.get("/{corporation_id}/inquiries", response_model=List[schemas.Inquiry], summary="法人関連問い合わせ一覧", dependencies=[Depends(security)])
@@ -128,7 +128,7 @@ def read_corporation_schools(
 #     skip: int = 0,
 #     limit: int = 100,
 #     db: Session = Depends(get_db),
-#     current_user: models.User = Depends(get_corporation_access_checker)
+#     current_user: models.User = Depends(authorization_manager)
 # ):
 #     """
 #     指定法人に関連する問い合わせ一覧を取得します。
@@ -141,23 +141,33 @@ def read_corporation_schools(
 #     return inquiries
 
 
-# @router.post("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連付け", dependencies=[Depends(security)])
-# def add_school_to_corporation(corporation_id: int, school_id: int, db: Session = Depends(get_db)):
-#     """
-#     法人と学校を関連付けます。
-#     """
-#     school = crud.add_school_to_corporation(db, school_id=school_id, corporation_id=corporation_id)
-#     if school is None:
-#         raise HTTPException(status_code=404, detail="School or Corporation not found")
-#     return {"message": "School added to Corporation successfully"}
+@router.post("/{corporation_id}/shops/{shop_id}", summary="法人と店舗の関連付け", dependencies=[Depends(security)])
+def add_shop_to_corporation(
+    corporation_id: int,
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(authorization_manager)
+):
+    """
+    法人と店舗を関連付けます。
+    """
+    shop = crud.add_shop_to_corporation(db, shop_id=shop_id, corporation_id=corporation_id)
+    if shop is None:
+        raise HTTPException(status_code=404, detail="Shop or Corporation not found")
+    return {"message": "Shop added to Corporation successfully"}
 
 
-# @router.delete("/{corporation_id}/schools/{school_id}", summary="法人と学校の関連解除", dependencies=[Depends(security)])
-# def remove_school_from_corporation(corporation_id: int, school_id: int, db: Session = Depends(get_db)):
-#     """
-#     法人と学校の関連を解除します。
-#     """
-#     school = crud.remove_school_from_corporation(db, school_id=school_id, corporation_id=corporation_id)
-#     if school is None:
-#         raise HTTPException(status_code=404, detail="School or Corporation not found")
-#     return {"message": "School removed from Corporation successfully"}
+@router.delete("/{corporation_id}/shops/{shop_id}", summary="法人と店舗の関連解除", dependencies=[Depends(security)])
+def remove_shop_from_corporation(
+    corporation_id: int,
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(authorization_manager)
+):
+    """
+    法人と店舗の関連を解除します。
+    """
+    shop = crud.remove_shop_from_corporation(db, shop_id=shop_id, corporation_id=corporation_id)
+    if shop is None:
+        raise HTTPException(status_code=404, detail="Shop or Corporation not found")
+    return {"message": "Shop removed from Corporation successfully"}

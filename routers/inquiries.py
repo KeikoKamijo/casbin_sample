@@ -6,8 +6,8 @@ import crud
 import schemas
 import models
 from database import get_db
-from auth import security
-from casbin_dependencies import casbin_access_controller
+from auth import security, get_current_user
+from authorization_manager import authorization_manager
 
 router = APIRouter(
     prefix="/inquiries",
@@ -55,7 +55,8 @@ def read_inquiries(
     status: Optional[str] = None,
     priority: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(casbin_access_controller)
+    is_authorized: bool = Depends(authorization_manager),
+    current_user: models.User = Depends(get_current_user)
 ):
     """
     問い合わせ一覧を取得します。（管理者のみアクセス可能）
@@ -66,9 +67,19 @@ def read_inquiries(
     **アクセス不可**: accounting ロール
     **自動判定**: URL /inquiries + GET → inquiries:read 権限チェック
     """
-    # 権限チェックは casbin_access_controller で自動実行済み
-    # GET /inquiries → inquiries:read 権限が自動でチェックされる
-    inquiries = crud.get_inquiries(db, skip=skip, limit=limit, status=status, priority=priority)
+    # 権限チェック
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # マルチテナント対応：ユーザーの所属法人のデータのみを取得
+    inquiries = crud.get_inquiries(
+        db,
+        skip=skip,
+        limit=limit,
+        status=status,
+        priority=priority,
+        corporation_id=current_user.corporation_id
+    )
     return inquiries
 
 
@@ -76,7 +87,8 @@ def read_inquiries(
 def read_inquiry(
     inquiry_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(casbin_access_controller)
+    is_authorized: bool = Depends(authorization_manager),
+    current_user: models.User = Depends(get_current_user)
 ):
     """
     指定IDの問い合わせ詳細を取得します（関連情報含む）。
@@ -85,8 +97,16 @@ def read_inquiry(
     **アクセス不可**: accounting ロール
     **自動判定**: URL /inquiries/{id} + GET → inquiries:read 権限チェック
     """
-    # 権限チェックは casbin_access_controller で自動実行済み
-    db_inquiry = crud.get_inquiry(db, inquiry_id=inquiry_id)
+    # 権限チェック
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # マルチテナント対応：ユーザーの所属法人のデータのみを取得
+    db_inquiry = crud.get_inquiry(
+        db,
+        inquiry_id=inquiry_id,
+        corporation_id=current_user.corporation_id
+    )
     if db_inquiry is None:
         raise HTTPException(status_code=404, detail="Inquiry not found")
     return db_inquiry

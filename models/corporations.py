@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from . import Base
-from .associations import corporation_school
+from .associations import corporation_shop
 
 
 class Corporation(Base):
@@ -17,4 +17,4 @@ class Corporation(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     users = relationship("User", back_populates="corporation")
-    schools = relationship("School", secondary=corporation_school, back_populates="corporations")
+    shops = relationship("Shop", secondary=corporation_shop, back_populates="corporations")

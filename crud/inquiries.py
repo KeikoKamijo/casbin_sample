@@ -3,12 +3,31 @@ import models
 from schemas.inquiries import InquiryCreate, InquiryUpdate, InquiryStatusUpdate
 
 
-def get_inquiry(db: Session, inquiry_id: int):
-    return db.query(models.Inquiry).filter(models.Inquiry.id == inquiry_id).first()
+def get_inquiry(db: Session, inquiry_id: int, corporation_id: int = None):
+    """
+    マルチテナント対応の問い合わせ個別取得
+    corporation_id が指定された場合、そのテナントのデータのみを返す
+    """
+    query = db.query(models.Inquiry).filter(models.Inquiry.id == inquiry_id)
+
+    # マルチテナントフィルタリング（必須）
+    if corporation_id is not None:
+        query = query.filter(models.Inquiry.corporation_id == corporation_id)
+
+    return query.first()
 
 
-def get_inquiries(db: Session, skip: int = 0, limit: int = 100, status: str = None, priority: str = None):
+def get_inquiries(db: Session, skip: int = 0, limit: int = 100, status: str = None, priority: str = None, corporation_id: int = None):
+    """
+    マルチテナント対応の問い合わせ一覧取得
+    corporation_id が指定された場合、そのテナントのデータのみを返す
+    """
     query = db.query(models.Inquiry)
+
+    # マルチテナントフィルタリング（必須）
+    if corporation_id is not None:
+        query = query.filter(models.Inquiry.corporation_id == corporation_id)
+
     if status:
         query = query.filter(models.Inquiry.status == status)
     if priority:
@@ -48,8 +67,8 @@ def create_inquiry(db: Session, inquiry: InquiryCreate):
     return db_inquiry
 
 
-def update_inquiry(db: Session, inquiry_id: int, inquiry: InquiryUpdate):
-    db_inquiry = get_inquiry(db, inquiry_id)
+def update_inquiry(db: Session, inquiry_id: int, inquiry: InquiryUpdate, corporation_id: int = None):
+    db_inquiry = get_inquiry(db, inquiry_id, corporation_id)
     if not db_inquiry:
         return None
 
@@ -62,8 +81,8 @@ def update_inquiry(db: Session, inquiry_id: int, inquiry: InquiryUpdate):
     return db_inquiry
 
 
-def assign_inquiry(db: Session, inquiry_id: int, assigned_to_id: int):
-    db_inquiry = get_inquiry(db, inquiry_id)
+def assign_inquiry(db: Session, inquiry_id: int, assigned_to_id: int, corporation_id: int = None):
+    db_inquiry = get_inquiry(db, inquiry_id, corporation_id)
     if not db_inquiry:
         return None
 
@@ -74,8 +93,8 @@ def assign_inquiry(db: Session, inquiry_id: int, assigned_to_id: int):
     return db_inquiry
 
 
-def update_inquiry_status(db: Session, inquiry_id: int, status_update: InquiryStatusUpdate):
-    db_inquiry = get_inquiry(db, inquiry_id)
+def update_inquiry_status(db: Session, inquiry_id: int, status_update: InquiryStatusUpdate, corporation_id: int = None):
+    db_inquiry = get_inquiry(db, inquiry_id, corporation_id)
     if not db_inquiry:
         return None
 
@@ -91,8 +110,8 @@ def update_inquiry_status(db: Session, inquiry_id: int, status_update: InquirySt
     return db_inquiry
 
 
-def delete_inquiry(db: Session, inquiry_id: int):
-    db_inquiry = get_inquiry(db, inquiry_id)
+def delete_inquiry(db: Session, inquiry_id: int, corporation_id: int = None):
+    db_inquiry = get_inquiry(db, inquiry_id, corporation_id)
     if db_inquiry:
         db.delete(db_inquiry)
         db.commit()

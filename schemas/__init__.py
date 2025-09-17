@@ -1,8 +1,8 @@
 from .users import User, UserBase, UserCreate, UserUpdate
 from .corporations import Corporation, CorporationBase, CorporationCreate, CorporationUpdate
-from .schools import School, SchoolBase, SchoolCreate, SchoolUpdate
+from .shops import Shop, ShopBase, ShopCreate, ShopUpdate
 from .inquiries import Inquiry, InquiryBase, InquiryCreate, InquiryUpdate, InquiryAssign, InquiryStatusUpdate
-from .roles import Role, RoleBase, RoleCreate, RoleUpdate
+from .roles import Role, RoleBase, RoleCreate, RoleUpdate, RolePermission, RolePermissionCreate, RolePermissionUpdate, RoleWithPermissions
 from .auth import LoginRequest, Token, TokenData
 
 __all__ = [
@@ -10,13 +10,14 @@ __all__ = [
     "User", "UserBase", "UserCreate", "UserUpdate",
     # Corporations
     "Corporation", "CorporationBase", "CorporationCreate", "CorporationUpdate",
-    # Schools
-    "School", "SchoolBase", "SchoolCreate", "SchoolUpdate",
+    # Shops
+    "Shop", "ShopBase", "ShopCreate", "ShopUpdate",
     # Inquiries
     "Inquiry", "InquiryBase", "InquiryCreate", "InquiryUpdate", "InquiryAssign",
     "InquiryStatusUpdate",
     # Roles
-    "Role", "RoleBase", "RoleCreate", "RoleUpdate",
+    "Role", "RoleBase", "RoleCreate", "RoleUpdate", "RolePermission", "RolePermissionCreate",
+    "RolePermissionUpdate", "RoleWithPermissions",
     # Auth
     "LoginRequest", "Token", "TokenData"
 ]

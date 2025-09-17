@@ -60,40 +60,50 @@ def setup_initial_policies(enforcer: casbin.Enforcer):
             ("admin", "corporations", "create"),
             ("admin", "corporations", "update"),
             ("admin", "corporations", "delete"),
-            ("admin", "schools", "read"),
-            ("admin", "schools", "create"),
-            ("admin", "schools", "update"),
-            ("admin", "schools", "delete"),
+            ("admin", "shops", "read"),
+            ("admin", "shops", "create"),
+            ("admin", "shops", "update"),
+            ("admin", "shops", "delete"),
             ("admin", "inquiries", "read"),
             ("admin", "inquiries", "create"),
             ("admin", "inquiries", "update"),
             ("admin", "inquiries", "delete"),
 
             # 経理の権限
-            ("accounting", "corporations", "read"),
-            ("accounting", "corporations", "update"),  # 経理データの更新
-            ("accounting", "users", "read"),           # ユーザー情報の閲覧
+            # ("accountant", "corporations", "read"),  # 法人詳細は経理からアクセス不可
+            ("accountant", "users", "read"),           # ユーザー情報の閲覧
             # inquiriesは経理からアクセス不可（adminのみ）
         ]
 
-        # ロール権限を追加
-        for role, obj, act in role_policies:
-            enforcer.add_policy(role, obj, act)
-
-        # データベースからユーザーとロールの関係を取得
+        # マルチテナント対応：ユーザーごとにテナント固有のポリシーを生成
         user_roles_query = db.query(
             models.User.username,
+            models.User.corporation_id,
             models.Role.name.label('role_name')
         ).join(
             models.Role, models.User.role_id == models.Role.id
         ).filter(
-            models.User.role_id.isnot(None)
+            models.User.role_id.isnot(None),
+            models.User.corporation_id.isnot(None)
         ).all()
 
-        # ユーザーのロール割り当てを追加
+        # ユーザーごとにマルチテナント対応のポリシーを生成
         for user_role in user_roles_query:
-            enforcer.add_grouping_policy(user_role.username, user_role.role_name)
-            print(f"Assigned role '{user_role.role_name}' to user '{user_role.username}'")
+            username = user_role.username
+            corporation_id = user_role.corporation_id
+            role_name = user_role.role_name
+
+            # 該当ロールの権限を取得してマルチテナント形式で追加
+            for role, obj, act in role_policies:
+                if role == role_name:
+                    # corporation:{tenant_id}:{resource} 形式でポリシー追加
+                    tenant_resource = f"corporation:{corporation_id}:{obj}"
+                    enforcer.add_policy(username, tenant_resource, act)
+                    print(f"Added policy: {username} -> {tenant_resource} -> {act}")
+
+            # ユーザーのロール割り当ても追加（互換性のため）
+            enforcer.add_grouping_policy(username, role_name)
+            print(f"Assigned role '{role_name}' to user '{username}' (tenant: {corporation_id})")
 
         # ポリシーを保存
         enforcer.save_policy()

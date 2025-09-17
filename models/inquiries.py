@@ -13,7 +13,7 @@ class Inquiry(Base):
     status = Column(String, default="pending")  # pending, in_progress, resolved, closed
     priority = Column(String, default="normal")  # low, normal, high, urgent
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    shop_id = Column(Integer, ForeignKey("shops.id"), nullable=True)
     corporation_id = Column(Integer, ForeignKey("corporations.id"), nullable=True)
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -22,5 +22,5 @@ class Inquiry(Base):
 
     user = relationship("User", foreign_keys=[user_id], backref="inquiries_created")
     assigned_to = relationship("User", foreign_keys=[assigned_to_id], backref="inquiries_assigned")
-    school = relationship("School", backref="inquiries")
+    shop = relationship("Shop", backref="inquiries")
     corporation = relationship("Corporation", backref="inquiries")

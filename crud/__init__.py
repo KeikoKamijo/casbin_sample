@@ -21,16 +21,15 @@ from .corporations import (
     delete_corporation
 )
 
-from .schools import (
-    get_school,
-    get_school_by_code,
-    get_schools,
-    create_school,
-    update_school,
-    delete_school,
-    get_schools_by_corporation,
-    add_school_to_corporation,
-    remove_school_from_corporation
+from .shops import (
+    get_shop,
+    get_shops,
+    create_shop,
+    update_shop,
+    delete_shop,
+    get_shops_by_corporation,
+    add_shop_to_corporation,
+    remove_shop_from_corporation
 )
 
 from .inquiries import (
@@ -38,13 +37,26 @@ from .inquiries import (
     get_inquiries,
     get_inquiries_by_user,
     get_inquiries_assigned_to_user,
-    get_inquiries_by_school,
     get_inquiries_by_corporation,
     create_inquiry,
     update_inquiry,
     assign_inquiry,
     update_inquiry_status,
     delete_inquiry
+)
+
+from .roles import (
+    get_role,
+    get_roles,
+    create_role,
+    update_role,
+    delete_role,
+    get_role_permissions,
+    add_role_permission,
+    remove_role_permission,
+    get_user_roles,
+    assign_user_role,
+    unassign_user_role
 )
 
 __all__ = [
@@ -54,12 +66,16 @@ __all__ = [
     # Corporations
     "get_corporation", "get_corporation_by_name", "get_corporation_by_code",
     "get_corporations", "create_corporation", "update_corporation", "delete_corporation",
-    # Schools
-    "get_school", "get_school_by_code", "get_schools", "create_school", "update_school",
-    "delete_school", "get_schools_by_corporation", "add_school_to_corporation",
-    "remove_school_from_corporation",
+    # Shops
+    "get_shop", "get_shops", "create_shop", "update_shop",
+    "delete_shop", "get_shops_by_corporation", "add_shop_to_corporation",
+    "remove_shop_from_corporation",
     # Inquiries
     "get_inquiry", "get_inquiries", "get_inquiries_by_user", "get_inquiries_assigned_to_user",
-    "get_inquiries_by_school", "get_inquiries_by_corporation", "create_inquiry",
-    "update_inquiry", "assign_inquiry", "update_inquiry_status", "delete_inquiry"
+    "get_inquiries_by_corporation", "create_inquiry",
+    "update_inquiry", "assign_inquiry", "update_inquiry_status", "delete_inquiry",
+    # Roles
+    "get_role", "get_roles", "create_role", "update_role", "delete_role",
+    "get_role_permissions", "add_role_permission", "remove_role_permission",
+    "get_user_roles", "assign_user_role", "unassign_user_role"
 ]

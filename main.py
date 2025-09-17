@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import models
 from database import engine
-from routers import users, corporations, schools, inquiries, auth
+from routers import users, corporations, shops, inquiries, auth, roles
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -30,8 +30,9 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(corporations.router)
-app.include_router(schools.router)
+app.include_router(shops.router)
 app.include_router(inquiries.router)
+app.include_router(roles.router)
 
 
 @app.get("/", tags=["health"], summary="ヘルスチェック")
@@ -59,7 +60,8 @@ async def health_check():
             "auth": "/auth",
             "users": "/users",
             "corporations": "/corporations",
-            "schools": "/schools",
-            "inquiries": "/inquiries"
+            "shops": "/shops",
+            "inquiries": "/inquiries",
+            "roles": "/roles"
         }
     }
