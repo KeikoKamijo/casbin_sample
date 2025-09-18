@@ -6,7 +6,7 @@ import crud
 import schemas
 import models
 from database import get_db
-from auth import security
+from auth import security, get_current_user
 from authorization_manager import authorization_manager
 
 router = APIRouter(
@@ -20,7 +20,8 @@ router = APIRouter(
 def create_shop(
     shop: schemas.ShopCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     新規店舗を作成します。
@@ -46,11 +47,13 @@ def read_shops(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     店舗一覧を取得します（自法人のみ）。
     """
+
     # マルチテナント対応：自法人の店舗のみ取得
     shops = crud.get_shops(db, skip=skip, limit=limit, corporation_id=current_user.corporation_id)
     return shops
@@ -60,7 +63,8 @@ def read_shops(
 def read_shop(
     shop_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定IDの店舗詳細を取得します。
@@ -78,12 +82,14 @@ def update_shop(
     shop_id: int,
     shop: schemas.ShopUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定IDの店舗情報を更新します。
     """
-    # 更新時に法人IDを変更しようとした場合はエラー
+
+    # 更新時に法人 IDを変更しようとした場合はエラー
     if shop.corporation_id and shop.corporation_id != current_user.corporation_id:
         raise HTTPException(
             status_code=403,
@@ -100,11 +106,13 @@ def update_shop(
 def delete_shop(
     shop_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定IDの店舗を削除します。
     """
+
     success = crud.delete_shop(db, shop_id=shop_id, corporation_id=current_user.corporation_id)
     if not success:
         raise HTTPException(status_code=404, detail="Shop not found")
@@ -117,13 +125,15 @@ def read_corporation_shops(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定法人に所属する店舗一覧を取得します。
 
     マルチテナント対応：自法人のみアクセス可能
     """
+
     # マルチテナントチェック
     if corporation_id != current_user.corporation_id:
         raise HTTPException(

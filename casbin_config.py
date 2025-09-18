@@ -4,22 +4,22 @@ from database import SQLALCHEMY_DATABASE_URL
 from database import SessionLocal
 import models
 
-# CasbinのRBACモデル定義
+# CasbinのドメインベースマルチテナントRBACモデル定義
 CASBIN_MODEL = """
 [request_definition]
-r = sub, obj, act
+r = sub, dom, obj, act
 
 [policy_definition]
-p = sub, obj, act
+p = sub, dom, obj, act
 
 [role_definition]
-g = _, _
+g = _, _, _
 
 [policy_effect]
 e = some(where (p.eft == allow))
 
 [matchers]
-m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && r.obj == p.obj && r.act == p.act
 """
 
 
@@ -42,14 +42,12 @@ def get_casbin_enforcer():
 
 
 def setup_initial_policies(enforcer: casbin.Enforcer):
-    """RBACポリシーを設定"""
-
-
+    """ドメインベースRBACポリシーを設定"""
     # データベースセッション作成
     db = SessionLocal()
 
     try:
-        # ロールベースの権限定義
+        # ロールベースの権限定義（ドメイン独立）
         role_policies = [
             # 管理者の権限
             ("admin", "users", "read"),
@@ -70,12 +68,11 @@ def setup_initial_policies(enforcer: casbin.Enforcer):
             ("admin", "inquiries", "delete"),
 
             # 経理の権限
-            # ("accountant", "corporations", "read"),  # 法人詳細は経理からアクセス不可
-            ("accountant", "users", "read"),           # ユーザー情報の閲覧
-            # inquiriesは経理からアクセス不可（adminのみ）
+            ("accountant", "users", "read"),
+            # shopsとinquiriesは経理からアクセス不可（adminのみ）
         ]
 
-        # マルチテナント対応：ユーザーごとにテナント固有のポリシーを生成
+        # ユーザーロール情報を取得
         user_roles_query = db.query(
             models.User.username,
             models.User.corporation_id,
@@ -87,23 +84,31 @@ def setup_initial_policies(enforcer: casbin.Enforcer):
             models.User.corporation_id.isnot(None)
         ).all()
 
-        # ユーザーごとにマルチテナント対応のポリシーを生成
+
+        # ドメインごとのロールポリシーを追加
+        domains_processed = set()
+        for user_role in user_roles_query:
+            corporation_id = user_role.corporation_id
+            role_name = user_role.role_name
+            domain = f"corporation_{corporation_id}"
+
+            # 各ドメインで一度だけロールポリシーを設定
+            if (domain, role_name) not in domains_processed:
+                for role, obj, act in role_policies:
+                    if role == role_name:
+                        enforcer.add_policy(role_name, domain, obj, act)
+                        print(f"Added role policy: {role_name} -> {domain} -> {obj} -> {act}")
+                domains_processed.add((domain, role_name))
+
+        # ユーザーのロール割り当て（ドメインベース）
         for user_role in user_roles_query:
             username = user_role.username
             corporation_id = user_role.corporation_id
             role_name = user_role.role_name
+            domain = f"corporation_{corporation_id}"
 
-            # 該当ロールの権限を取得してマルチテナント形式で追加
-            for role, obj, act in role_policies:
-                if role == role_name:
-                    # corporation:{tenant_id}:{resource} 形式でポリシー追加
-                    tenant_resource = f"corporation:{corporation_id}:{obj}"
-                    enforcer.add_policy(username, tenant_resource, act)
-                    print(f"Added policy: {username} -> {tenant_resource} -> {act}")
-
-            # ユーザーのロール割り当ても追加（互換性のため）
-            enforcer.add_grouping_policy(username, role_name)
-            print(f"Assigned role '{role_name}' to user '{username}' (tenant: {corporation_id})")
+            enforcer.add_grouping_policy(username, role_name, domain)
+            print(f"Assigned role '{role_name}' to user '{username}' in domain '{domain}'")
 
         # ポリシーを保存
         enforcer.save_policy()
