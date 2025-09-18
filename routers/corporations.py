@@ -6,7 +6,7 @@ import crud
 import schemas
 import models
 from database import get_db
-from auth import security
+from auth import security, get_current_user
 from authorization_manager import authorization_manager
 
 router = APIRouter(
@@ -34,7 +34,13 @@ router = APIRouter(
 
 
 @router.get("/", response_model=List[schemas.Corporation], summary="法人一覧取得", dependencies=[Depends(security)])
-def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_corporations(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
+):
     """
     法人一覧を取得します。
     """
@@ -46,7 +52,8 @@ def read_corporations(skip: int = 0, limit: int = 100, db: Session = Depends(get
 def read_corporation(
     corporation_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定IDの法人詳細を取得します（所属ユーザー含む）。
@@ -74,7 +81,12 @@ def read_corporation(
 
 
 @router.delete("/{corporation_id}", summary="法人削除", dependencies=[Depends(security)])
-def delete_corporation(corporation_id: int, db: Session = Depends(get_db)):
+def delete_corporation(
+    corporation_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
+):
     """
     指定IDの法人を削除します。
     """
@@ -90,7 +102,8 @@ def read_corporation_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定法人に所属するユーザー一覧を取得します。
@@ -109,7 +122,8 @@ def read_corporation_shops(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     指定法人に関連する店舗一覧を取得します。
@@ -128,7 +142,8 @@ def read_corporation_shops(
 #     skip: int = 0,
 #     limit: int = 100,
 #     db: Session = Depends(get_db),
-#     current_user: models.User = Depends(authorization_manager)
+#     current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 # ):
 #     """
 #     指定法人に関連する問い合わせ一覧を取得します。
@@ -146,7 +161,8 @@ def add_shop_to_corporation(
     corporation_id: int,
     shop_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     法人と店舗を関連付けます。
@@ -162,7 +178,8 @@ def remove_shop_from_corporation(
     corporation_id: int,
     shop_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(authorization_manager)
+    current_user: models.User = Depends(get_current_user),  # 認証
+    authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
     法人と店舗の関連を解除します。

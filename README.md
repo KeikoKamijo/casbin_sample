@@ -40,6 +40,65 @@ casbin_sample/
         └── corporations.py          # 法人詳細（管理者のみ、経理はアクセス不可）
 ```
 
+## 🌐 RESTful URL設計とエンドポイント統一インターフェース
+
+本システムではCasbinとマルチテナント対応のため、RESTfulな設計原則を遵守しています。
+
+### RESTful URL設計原則
+
+- **リソース中心設計**: URLはリソース（名詞）で構成し、動詞は避ける
+- **階層構造**: リソース間の関係を明確に表現
+- **標準HTTPメソッド**: CRUD操作にはGET/POST/PUT/DELETE使用
+- **複数形リソース名**: コレクションは複数形（`/shops`, `/corporations`）
+
+#### 統一インターフェースパターン
+
+全エンドポイントで認証・認可の統一依存性注入を実装：
+
+```python
+@router.get("/{resource_id}", dependencies=[Depends(security)])
+def get_resource(
+    resource_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),     # 認証
+    authorized: bool = Depends(authorization_manager)         # 認可
+):
+    # マルチテナント・権限チェックは依存性注入で自動実行済み
+    return crud.get_resource(db, resource_id=resource_id)
+```
+
+#### 現在のRESTful エンドポイント設計
+
+```
+GET    /corporations           # 法人一覧（admin権限必要）
+GET    /corporations/{id}      # 法人詳細（admin権限必要）
+DELETE /corporations/{id}      # 法人削除（admin権限必要）
+
+GET    /shops                  # 店舗一覧（admin権限必要）
+GET    /shops/{id}             # 店舗詳細（admin権限必要）
+POST   /shops                  # 店舗作成（admin権限必要）
+PUT    /shops/{id}             # 店舗更新（admin権限必要）
+DELETE /shops/{id}             # 店舗削除（admin権限必要）
+
+GET    /inquiries              # 問い合わせ一覧（admin権限必要）
+GET    /inquiries/{id}         # 問い合わせ詳細（admin権限必要）
+```
+
+#### マルチテナント対応URL
+
+法人に紐づくリソースアクセス：
+
+```
+GET /corporations/{corp_id}/users      # 法人所属ユーザー一覧
+GET /corporations/{corp_id}/shops      # 法人関連店舗一覧
+```
+
+### 認可チェックの自動化
+
+- URLパスから自動的にリソース名を抽出 (`extract_resource_from_path`)
+- HTTPメソッドからアクション抽出 (`map_method_to_action`)
+- Casbinで`enforce(user, domain, resource, action)`による統一認可
+
 ## 📚 RBACとマルチテナントの確認
 
 ### RBAC（Role-Based Access Control）とは
