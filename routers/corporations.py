@@ -56,11 +56,8 @@ def read_corporation(
     authorized: bool = Depends(authorization_manager)  # 認可
 ):
     """
-    指定IDの法人詳細を取得します（所属ユーザー含む）。
+    エンドポイントでは、authorization_managerを呼ぶ
 
-    認証が必要で、ユーザーは自分の所属法人の詳細のみ取得できます。
-    Bearer tokenでユーザー認証を行い、トークンに含まれるユーザーIDから
-    所属法人を特定し、リクエストされた法人IDと一致する場合のみアクセス許可されます。
     """
     # 権限チェックは依存性注入で実行済み
     db_corporation = crud.get_corporation(db, corporation_id=corporation_id)

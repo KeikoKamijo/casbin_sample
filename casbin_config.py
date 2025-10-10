@@ -22,6 +22,23 @@ e = some(where (p.eft == allow))
 m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && r.obj == p.obj && r.act == p.act
 """
 
+"""
+  r = sub, dom, obj, act
+  - リクエストの構造を定義
+  - sub: Subject（主体＝ユーザー名）例: "Alice"
+  - dom: Domain（ドメイン＝テナント）例: "corporation_1"
+  - obj: Object（対象リソース）例: "users"
+  - act: Action（操作）例: "read", "create"
+
+  [policy_definition]
+
+  p = sub, dom, obj, act
+  - ポリシー（権限）の構造を定義
+  - リクエストと同じ4つのパラメータで権限を定義
+  - 例: p, Alice, corporation_1, users, read
+
+"""
+
 
 def get_casbin_enforcer():
     """Casbinエンフォーサーを取得"""

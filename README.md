@@ -1,3 +1,102 @@
+# 認可の実装のイメージ確認
+
+## 参加者の目線合わせ
+### 認可モデル
+#### RBAC
+
+```python
+# 1. ユーザー（User）
+user = {
+    "username": "alice",
+    "role": "admin"
+}
+
+# 2. ロール別権限（Role-based Permissions）
+role_permissions = {
+    "admin": {
+        "users": ["read", "create", "update", "delete"],
+        "shops": ["read", "create", "update", "delete"],
+        "inquiries": ["read", "create", "update", "delete"],
+        "corporations": ["read", "create", "update", "delete"]
+    },
+    "accountant": {
+        "users": ["read"],
+        "shops": [],  # アクセス不可
+        "inquiries": [],  # アクセス不可
+        "corporations": []  # アクセス不可
+    }
+}
+
+
+
+```
+
+#### ABACとは
+
+- ユーザー、リソース、環境の様々な**属性（Attribute）**を評価
+
+```python
+# Userオブジェクトの例（多様な属性を持つ）
+
+user = {
+    "username": "alice",
+    "role": "admin",
+    "corporation_id": 1,
+    "employment_date": "2020-01-01",
+    "region": "tokyo",
+    "security_clearance": "confidential",
+    "is_temporary": False
+}
+
+context = {
+    "classification": "confidential",
+}
+
+## 判定条件
+user.employment_date < xxx
+user.is_temporary == true
+
+print(check_abac_permission(alice, "financial_reports", "read", context))  # True
+print(check_abac_permission(alice, "sensitive_data", "read", context))     # True（雇用日OK）
+
+- **RBACはABACの一種**
+- 「role属性のみを使用するABAC」
+```
+
+#### ReBAC（Relationship-Based Access Control
+- ユーザーとリソース間の関係性でグラフ理論で権限決定
+- 権限の定義が書きやすい
+- サーバが必要で学習コストも高いので、今回は多分見送り
+
+
+
+## 今回の要件
+- 認証との分離
+- マルチテナント型の権限設計
+  - A会社、B会社、C会社があって、会社ごとのデータは分離されていなければならない
+  - ある会社から別の会社情報が見えてしまうと信用に関わる
+    - DB層で分離できない
+    - 権限判定で分離する
+
+
+## Casbin
+- ライブラリとして使える
+- もうPythonでライブラリとして使えるツールはこれくらいしかない。
+- これ以外だと、マネージドにするか、自前サーバが必要
+
+
+## ドメインベースRBAC
+- ドメイン（テナント）判定 + RBAC
+
+
+
+## 考慮事項
+- 関数？クラス？ 関数でいけそう
+- 単純なAllow/Deny以外の制御が必要だと、crud側でfilter()とかが必要
+- 追加要件 ABACで別実装　crud側? 神クラスを作る？
+- APIのURL設計に条件あり
+- 
+
 # PyCasbin Domain-Based Multi-Tenant Authorization System
 
 FastAPIとPyCasbinを使用したドメインベースマルチテナント対応RBAC認可システムの実装です。
@@ -101,64 +200,11 @@ GET /corporations/{corp_id}/shops      # 法人関連店舗一覧
 
 ## 📚 RBACとマルチテナントの確認
 
-### RBAC（Role-Based Access Control）とは
+### RBAC（Role-Based Access Control）
 
 - ユーザーにロール（役割）を割り当て
-- ロールに応じて権限を制御するセキュリティモデル
+- ロールに応じて権限を制御するモデル
 
-#### 基本的なRBAC構造
-
-```python
-# 1. ユーザー（User）
-user = {
-    "username": "alice",
-    "role": "admin"
-}
-
-# 2. リソースと権限（Resource & Actions）
-permissions = {
-    "users": ["read", "create", "update", "delete"],
-    "shops": ["read", "create", "update", "delete"],
-    "inquiries": ["read", "create", "update", "delete"],
-    "corporations": ["read", "create", "update", "delete"]
-}
-
-# 3. ロール別権限（Role-based Permissions）
-role_permissions = {
-    "admin": {
-        "users": ["read", "create", "update", "delete"],
-        "shops": ["read", "create", "update", "delete"],
-        "inquiries": ["read", "create", "update", "delete"],
-        "corporations": ["read", "create", "update", "delete"]
-    },
-    "accountant": {
-        "users": ["read"],
-        "shops": [],  # アクセス不可
-        "inquiries": [],  # アクセス不可
-        "corporations": []  # アクセス不可
-    }
-}
-
-# 4. リソース・アクション別権限チェック
-def check_permission(user, resource, action):
-    user_role = user["role"]
-    if user_role not in role_permissions:
-        return False
-
-    # 指定されたリソースへのアクセス権限をチェック
-    allowed_actions = role_permissions[user_role].get(resource, [])
-    return action in allowed_actions
-
-# 使用例
-alice = {"username": "alice", "role": "admin"}
-bob = {"username": "bob", "role": "accountant"}
-
-print(check_permission(alice, "shops", "read"))      # True（adminは全権限）
-print(check_permission(bob, "shops", "read"))        # False（accountantはshopアクセス不可）
-print(check_permission(alice, "users", "create"))    # True（adminは全権限）
-print(check_permission(bob, "users", "read"))        # True（accountantはusers読取のみ可能）
-print(check_permission(bob, "users", "create"))      # False（accountantは読取のみ）
-```
 
 ### マルチテナント + RBAC
 
@@ -202,82 +248,6 @@ print(check_multitenant_permission("alice", "shops", "read", 2))  # False
 print(check_multitenant_permission("bob", "shops", "read", 1))    # False
 ```
 
-### ABAC（Attribute-Based Access Control）とRBACの関係
-
-#### ABACとは
-
-- ユーザー、リソース、環境の様々な**属性（Attribute）**を評価
-- 権限を決定するより柔軟なモデル
-- 複数の条件を組み合わせて判定
-
-```python
-# Userオブジェクトの例（多様な属性を持つ）
-user = {
-    "username": "alice",
-    "role": "admin",                    # ロール属性
-    "corporation_id": 1,                # 所属法人属性
-    "department": "finance",            # 部署属性
-    "employment_date": "2020-01-01",    # 雇用日属性
-    "security_clearance": "confidential", # セキュリティクリアランス属性
-    "region": "tokyo",                  # 地域属性
-    "is_temporary": False               # 雇用形態属性
-}
-
-# ABAC権限チェック（複数属性を評価）
-def check_abac_permission(user, resource, action, context):
-    # 属性1: ロールベース（RBAC的要素）
-    if user["role"] not in ["admin", "manager"] and action in ["delete", "create"]:
-        return False
-
-    # 属性2: 時間制限（雇用期間）
-    if user["employment_date"] > "2023-01-01" and resource == "sensitive_data":
-        return False
-
-    # 属性3: 地域制限
-    if user["region"] != context["data_region"] and resource == "regional_reports":
-        return False
-
-    # 属性4: セキュリティクリアランス
-    if context["classification"] == "secret" and user["security_clearance"] != "secret":
-        return False
-
-    # 属性5: 一時雇用制限
-    if user["is_temporary"] and action in ["delete", "export"]:
-        return False
-
-    return True
-
-# 使用例
-alice = {
-    "username": "alice",
-    "role": "admin",
-    "corporation_id": 1,
-    "employment_date": "2020-01-01",
-    "region": "tokyo",
-    "security_clearance": "confidential",
-    "is_temporary": False
-}
-
-context = {
-    "data_region": "tokyo",
-    "classification": "confidential",
-    "time": "09:00",
-    "ip_address": "192.168.1.100"
-}
-
-# 様々な属性を総合して判定
-print(check_abac_permission(alice, "financial_reports", "read", context))  # True
-print(check_abac_permission(alice, "sensitive_data", "read", context))     # True（雇用日OK）
-```
-
-#### その他のアクセス制御モデル
-
-**ReBAC（Relationship-Based Access Control）**
-- ユーザーとリソース間の関係性で権限決定
-- ownership, membership, delegationなど
-- 例：「ドキュメントの作成者」「プロジェクトのメンバー」「部門の管理者」
-- 採用例：Google Zanzibar、Auth0 FGA
-- **本システム不採用理由**：複雑すぎるため
 
 #### RBACはABACの特殊形態
 

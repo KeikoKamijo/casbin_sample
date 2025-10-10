@@ -1,3 +1,14 @@
 .idea/
 casbin_sample.db
-test_main.http
+test_*
+
+# Python キャッシュファイル
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# データベースファイル
+*.db
+*.sqlite
+*.sqlite3
